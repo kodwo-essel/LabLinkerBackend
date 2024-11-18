@@ -20,7 +20,13 @@ class OTPAuthenticationView(APIView):
         if not email:
             return Response({"detail": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        user, created = get_user_model().objects.get_or_create(email=email)
+        #user, created = get_user_model().objects.get_or_create(email=email)
+
+        user, created = get_user_model().objects.get_or_create(
+            email=email,
+            defaults={
+                'username': email.split('@')[0]
+            })
 
         otp_code = get_random_string(length=6, allowed_chars='1234567890')
         otp_expiration = timezone.now() + timedelta(minutes=5)
