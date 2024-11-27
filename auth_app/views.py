@@ -11,6 +11,8 @@ from .models import OTP
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated 
+
 
 
 # Generate OTP and send via email
@@ -132,3 +134,28 @@ class EmailPasswordAuthView(APIView):
             "access": str(access_token),
             "refresh": str(refresh)
         }, status=status.HTTP_200_OK)
+    
+
+class PasswordResetView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+
+        # get user from request
+        user = request.user
+
+        if not current_password or not new_password:
+            return Response({"detail": "Current password and new password are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # check if current password is correct
+        if not user.check_password(current_password):
+            return Response({"detail": "Current password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # update password
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
+
