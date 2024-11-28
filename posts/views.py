@@ -89,3 +89,4 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         """ Perform the update operation """
         serializer.save()
+
