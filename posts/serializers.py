@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from likes.models import Like
 from .models import Post, PostFile, Tag
+from comments.models import Comment
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,12 +29,13 @@ class PostSerializer(serializers.ModelSerializer):
     )
     uploaded_files = PostFileSerializer(many=True, read_only=True, source='files')
     likes_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = [
             'id', 'title', 'content', 'author', 
-            'tags', 'tag_names', 'files', 'uploaded_files', 'likes_count',
+            'tags', 'tag_names', 'files', 'uploaded_files', 'likes_count', 'comment_count',
             'created_at', 'updated_at'
         ]
 
@@ -42,6 +44,9 @@ class PostSerializer(serializers.ModelSerializer):
     
     def get_likes_count(self, obj):
         return Like.objects.filter(post=obj).count()
+    
+    def get_comment_count(self, obj):
+        return Comment.objects.filter(post=obj).count()
 
     def create(self, validated_data):
         # Handle tags
