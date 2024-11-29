@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'auth_app',
     'posts',
     'user',
+    'likes',
 ]
 
 MIDDLEWARE = [
