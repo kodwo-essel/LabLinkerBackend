@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from auth_app.serializers import UserSerializer
 from likes.models import Like
 from .models import Post, PostFile, Tag
 from comments.models import Comment
@@ -10,12 +11,20 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class PostFileSerializer(serializers.ModelSerializer):
+    file = serializers.ImageField(use_url=True)
+    file_url = serializers.SerializerMethodField()
+
+    def get_file_url(self, obj):
+        if obj.file:
+            return obj.file.url  # Cloudinary provides the full URL
+        return None
+    
     class Meta:
         model = PostFile
-        fields = ['file']
+        fields = ['file', 'file_url']
 
 class PostSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(read_only=True)
+    author = UserSerializer(read_only=True)  # Use a nested serializer for the user
     tags = serializers.ListField(
         child=serializers.CharField(max_length=50), 
         write_only=True, 
@@ -30,13 +39,13 @@ class PostSerializer(serializers.ModelSerializer):
     uploaded_files = PostFileSerializer(many=True, read_only=True, source='files')
     likes_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
+    liked_by = serializers.SerializerMethodField() 
 
     class Meta:
         model = Post
         fields = [
             'id', 'title', 'content', 'author', 
-            'tags', 'tag_names', 'files', 'uploaded_files', 'likes_count', 'comment_count',
-            'created_at', 'updated_at'
+            'tags', 'tag_names', 'files', 'uploaded_files', 'likes_count', 'liked_by','comment_count','created_at', 'updated_at'
         ]
 
     def get_tag_names(self, obj):
@@ -47,61 +56,53 @@ class PostSerializer(serializers.ModelSerializer):
     
     def get_comment_count(self, obj):
         return Comment.objects.filter(post=obj).count()
+    
+    def get_liked_by(self, obj):
+        return Like.objects.filter(post=obj).values_list('user_id', flat=True)
 
     def create(self, validated_data):
-        # Handle tags
         tag_names = validated_data.pop('tags', [])
-        
-        # Handle files
         files_data = validated_data.pop('files', [])
         
-        # Create post
         post = Post.objects.create(**validated_data)
         
-        # Create tags
         if tag_names:
-            tags = []
-            for tag_name in tag_names:
-                tag, created = Tag.objects.get_or_create(name=tag_name)
-                tags.append(tag)
+            tags = [Tag.objects.get_or_create(name=tag_name)[0] for tag_name in tag_names]
             post.tags.set(tags)
-        
-        # Create files
+
         for file in files_data:
             PostFile.objects.create(post=post, file=file)
         
         return post
 
     def update(self, instance, validated_data):
-        # Handle tags
         tag_names = validated_data.pop('tags', None)
-        
-        # Handle files
         files_data = validated_data.pop('files', None)
         
-        # Update post fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        
-        # Update tags
+
         if tag_names is not None:
-            tags = []
-            for tag_name in tag_names:
-                tag, created = Tag.objects.get_or_create(name=tag_name)
-                tags.append(tag)
+            tags = [Tag.objects.get_or_create(name=tag_name)[0] for tag_name in tag_names]
             instance.tags.set(tags)
-        
-        # Update files
+
         if files_data:
-            # Optional: Remove existing files if you want to replace all
-            # instance.files.all().delete()
-            
-            # Add new files
             for file in files_data:
                 PostFile.objects.create(post=instance, file=file)
-        
+
         return instance
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Manually pass the request context to ProductImageSerializer
+        for file_data in representation.get('files', []):
+            file_data['file_url'] = self.context['request'].build_absolute_uri(file_data.get('image', ''))
+
+        return representation
+    
+    
     
 class TagSerializer(serializers.ModelSerializer):
     class Meta:

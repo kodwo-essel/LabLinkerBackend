@@ -7,7 +7,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import timedelta
 from django.utils import timezone
-from .models import OTP
+
+from auth_app.serializers import UserSerializer
+from .models import OTP, CustomUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import ValidationError
@@ -127,12 +129,16 @@ class EmailPasswordAuthView(APIView):
         if user is None:
             return Response({"detail": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST)
 
+        authenticated_user = CustomUser.objects.get(email=email)
+
+        serialized_user = UserSerializer(authenticated_user)
         refresh = RefreshToken.for_user(user)
         access_token = refresh.access_token
 
         return Response({
             "access": str(access_token),
-            "refresh": str(refresh)
+            "refresh": str(refresh),
+            "user": serialized_user.data
         }, status=status.HTTP_200_OK)
     
 

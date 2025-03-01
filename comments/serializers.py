@@ -1,8 +1,10 @@
 from rest_framework import serializers
+
+from auth_app.serializers import UserSerializer
 from .models import Comment
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(read_only=True)
+    author = UserSerializer(read_only=True)
     replies = serializers.SerializerMethodField()
 
     class Meta:
