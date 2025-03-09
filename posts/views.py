@@ -13,7 +13,7 @@ class PostListCreateView(generics.ListCreateAPIView):
     def get(self, request, *args, **kwargs):
         """ Get all posts """
         try:
-            posts = Post.objects.all()
+            posts = Post.objects.all().order_by('-created_at')
             serializer = PostSerializer(posts, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
