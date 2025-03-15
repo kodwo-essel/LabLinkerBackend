@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 
+from cloudinary.models import CloudinaryField
+
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
 
@@ -20,7 +22,7 @@ class Post(models.Model):
 
 class PostFile(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='files')
-    file = models.FileField(upload_to='post_files/')
+    file = CloudinaryField("image", blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

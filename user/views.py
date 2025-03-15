@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from .serializers import UserSerializer
-from rest_framework.permissions import IsAuthenticated 
+from rest_framework.permissions import IsAuthenticatedOrReadOnly 
 
 class GetAllUsersView(APIView):
     def get(self, request):
@@ -14,7 +14,7 @@ class GetAllUsersView(APIView):
 
 
 class UserView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     def get(self, request, user_id):
         try:
             user = get_user_model().objects.get(id=user_id)  # Fetch user by ID

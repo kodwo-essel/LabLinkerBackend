@@ -24,4 +24,6 @@ urlpatterns = [
     path(f'{BASE_URL}/auth/', include('auth_app.urls')),
     path(f'{BASE_URL}/users/', include('user.urls')),
     path(f'{BASE_URL}/posts/', include('posts.urls')),
+    path(f'{BASE_URL}/likes/', include('likes.urls')),
+    path(f'{BASE_URL}/comments/', include('comments.urls')),
 ]
