@@ -1,0 +1,17 @@
+nohup: ignoring input
+[90m[main 2025-06-28T19:50:51.209Z][0m updateURL https://api2.cursor.sh/updates/api/update/linux-x64/cursor/1.1.6/a7b3cf2c888499da90f01c209ef8366205f3678a8b55b8d8ae55ba544770a3a1/stable
+[90m[main 2025-06-28T19:50:51.210Z][0m update#setState idle
+[91m[main 2025-06-28T19:50:54.235Z][0m vscode-file: Refused to load resource /tmp/.mount_CursorzaP57R/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff from vscode-file: protocol (original URL: vscode-file://vscode-app/tmp/.mount_CursorzaP57R/usr/share/cursor/resources/app/extensions/theme-seti/icons/seti.woff)
+[90m[main 2025-06-28T19:51:12.668Z][0m Extension host with pid 60390 exited with code: 0, signal: unknown.
+[91m[main 2025-06-28T19:51:12.690Z][0m [UtilityProcess id: 1, type: fileWatcher, pid: 60361]: crashed with code 15 and reason 'killed'
+[90m[main 2025-06-28T19:51:21.211Z][0m update#setState checking for updates
+[90m[main 2025-06-28T19:51:21.448Z][0m update#setState idle
+[90m[main 2025-06-28T20:39:06.892Z][0m Extension host with pid 78943 exited with code: 0, signal: unknown.
+[59999:0628/204022.281844:ERROR:atom_cache.cc(229)] Add chromium/from-privileged to kAtomsToCache
+[90m[main 2025-06-28T20:51:21.214Z][0m update#setState checking for updates
+[90m[main 2025-06-28T20:51:21.455Z][0m update#setState idle
+[90m[main 2025-06-28T21:51:21.224Z][0m update#setState checking for updates
+[90m[main 2025-06-28T21:51:22.058Z][0m update#setState idle
+[60051:0628/215830.409738:ERROR:gl_surface_presentation_helper.cc(260)] GetVSyncParametersIfAvailable() failed for 1 times!
+[90m[main 2025-06-28T22:51:21.228Z][0m update#setState checking for updates
+[90m[main 2025-06-28T22:51:22.045Z][0m update#setState idle
