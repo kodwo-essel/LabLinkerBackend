@@ -160,3 +160,11 @@ class UserFeedView(generics.ListAPIView):
         following_users = self.request.user.following.all()
         return Post.objects.filter(author__in=following_users)
 
+class PostsByUserView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        user_id = self.kwargs.get('user_id')
+        return Post.objects.filter(author_id=user_id)
+

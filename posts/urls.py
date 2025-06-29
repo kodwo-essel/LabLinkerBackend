@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     PostListCreateView, PostDetailView, CategoryListView, CategoryDetailView,
     BookmarkPostView, UnbookmarkPostView, UserBookmarksView, 
-    PostsByCategoryView, UserFeedView
+    PostsByCategoryView, UserFeedView, PostsByUserView
 )
 
 urlpatterns = [
@@ -21,4 +21,7 @@ urlpatterns = [
     
     # User feed
     path('feed/', UserFeedView.as_view(), name='user-feed'),
+    
+    # User's posts
+    path('user/<int:user_id>/', PostsByUserView.as_view(), name='posts-by-user'),
 ]
