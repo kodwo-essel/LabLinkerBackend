@@ -26,4 +26,5 @@ urlpatterns = [
     path(f'{BASE_URL}/posts/', include('posts.urls')),
     path(f'{BASE_URL}/likes/', include('likes.urls')),
     path(f'{BASE_URL}/comments/', include('comments.urls')),
+    path(f'{BASE_URL}/resources/', include('resources.urls')),
 ]
