@@ -15,7 +15,7 @@ class PostListCreateView(generics.ListCreateAPIView):
         """ Get all posts """
         try:
             posts = Post.objects.all().order_by('-created_at')
-            serializer = PostSerializer(posts, many=True)
+            serializer = PostSerializer(posts, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -45,7 +45,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         """ Get a single post by post_id """
         try:
             post = Post.objects.get(id=post_id)  # Use post_id to get the post based on 'id' field
-            serializer = self.get_serializer(post)
+            serializer = self.get_serializer(post, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Post.DoesNotExist:
             raise NotFound(detail=f"Post with id {post_id} not found.")
@@ -56,7 +56,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             post = Post.objects.get(id=post_id)  # Use post_id to get the post based on 'id' field
             if post.author != request.user:
                 raise PermissionDenied("You are not allowed to update this post.")
-            serializer = self.get_serializer(post, data=request.data, partial=True)
+            serializer = self.get_serializer(post, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid():
                 self.perform_update(serializer)
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -114,11 +114,11 @@ class BookmarkPostView(APIView):
             user=request.user,
             post=post
         )
-        
+        serializer = BookmarkSerializer(bookmark, context={'request': request})
         if created:
-            return Response({"detail": "Post bookmarked successfully."}, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({"detail": "Post already bookmarked."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UnbookmarkPostView(APIView):
     permission_classes = [IsAuthenticated]
