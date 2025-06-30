@@ -1,9 +1,10 @@
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.response import Response
-from .models import Post
-from .serializers import PostSerializer
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
+from .models import Post, Category, Bookmark
+from .serializers import PostSerializer, CategorySerializer, BookmarkSerializer
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
@@ -14,7 +15,7 @@ class PostListCreateView(generics.ListCreateAPIView):
         """ Get all posts """
         try:
             posts = Post.objects.all().order_by('-created_at')
-            serializer = PostSerializer(posts, many=True)
+            serializer = PostSerializer(posts, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -44,7 +45,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         """ Get a single post by post_id """
         try:
             post = Post.objects.get(id=post_id)  # Use post_id to get the post based on 'id' field
-            serializer = self.get_serializer(post)
+            serializer = self.get_serializer(post, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Post.DoesNotExist:
             raise NotFound(detail=f"Post with id {post_id} not found.")
@@ -55,7 +56,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             post = Post.objects.get(id=post_id)  # Use post_id to get the post based on 'id' field
             if post.author != request.user:
                 raise PermissionDenied("You are not allowed to update this post.")
-            serializer = self.get_serializer(post, data=request.data, partial=True)
+            serializer = self.get_serializer(post, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid():
                 self.perform_update(serializer)
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -89,4 +90,81 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         """ Perform the update operation """
         serializer.save()
+
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+class CategoryDetailView(generics.RetrieveAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+class BookmarkPostView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        bookmark, created = Bookmark.objects.get_or_create(
+            user=request.user,
+            post=post
+        )
+        serializer = BookmarkSerializer(bookmark, context={'request': request})
+        if created:
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UnbookmarkPostView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            bookmark = Bookmark.objects.get(user=request.user, post=post)
+            bookmark.delete()
+            return Response({"detail": "Post unbookmarked successfully."}, status=status.HTTP_200_OK)
+        except Bookmark.DoesNotExist:
+            return Response({"detail": "Post not bookmarked."}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserBookmarksView(generics.ListAPIView):
+    serializer_class = BookmarkSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Bookmark.objects.filter(user=self.request.user)
+
+class PostsByCategoryView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    
+    def get_queryset(self):
+        category_id = self.kwargs.get('category_id')
+        return Post.objects.filter(category_id=category_id)
+
+class UserFeedView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        # Get posts from users that the current user follows
+        following_users = self.request.user.following.all()
+        return Post.objects.filter(author__in=following_users)
+
+class PostsByUserView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        user_id = self.kwargs.get('user_id')
+        return Post.objects.filter(author_id=user_id)
 

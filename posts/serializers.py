@@ -2,13 +2,18 @@ from rest_framework import serializers
 
 from auth_app.serializers import UserSerializer
 from likes.models import Like
-from .models import Post, PostFile, Tag
+from .models import Post, PostFile, Tag, Category, Bookmark
 from comments.models import Comment
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['id', 'name']
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'description', 'color']
 
 class PostFileSerializer(serializers.ModelSerializer):
     file = serializers.ImageField(use_url=True)
@@ -25,6 +30,7 @@ class PostFileSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)  # Use a nested serializer for the user
+    category = CategorySerializer(read_only=True)
     tags = serializers.ListField(
         child=serializers.CharField(max_length=50), 
         write_only=True, 
@@ -39,13 +45,16 @@ class PostSerializer(serializers.ModelSerializer):
     uploaded_files = PostFileSerializer(many=True, read_only=True, source='files')
     likes_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
-    liked_by = serializers.SerializerMethodField() 
+    liked_by = serializers.SerializerMethodField()
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = [
-            'id', 'title', 'content', 'author', 
-            'tags', 'tag_names', 'files', 'uploaded_files', 'likes_count', 'liked_by','comment_count','created_at', 'updated_at'
+            'id', 'content', 'author', 'category',
+            'tags', 'tag_names', 'files', 'uploaded_files', 
+            'likes_count', 'liked_by', 'comment_count', 'is_bookmarked',
+            'created_at', 'updated_at'
         ]
 
     def get_tag_names(self, obj):
@@ -59,6 +68,12 @@ class PostSerializer(serializers.ModelSerializer):
     
     def get_liked_by(self, obj):
         return Like.objects.filter(post=obj).values_list('user_id', flat=True)
+
+    def get_is_bookmarked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Bookmark.objects.filter(user=request.user, post=obj).exists()
+        return False
 
     def create(self, validated_data):
         tag_names = validated_data.pop('tags', [])
@@ -101,15 +116,12 @@ class PostSerializer(serializers.ModelSerializer):
             file_data['file_url'] = self.context['request'].build_absolute_uri(file_data.get('image', ''))
 
         return representation
-    
-    
-    
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ['id', 'name']
 
-    def create(self, validated_data):
-        """ Custom method to create a new tag """
-        tag = Tag.objects.create(**validated_data)
-        return tag
+class BookmarkSerializer(serializers.ModelSerializer):
+    post = PostSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = Bookmark
+        fields = ['id', 'post', 'user', 'created_at']
+        read_only_fields = ['user', 'created_at']
